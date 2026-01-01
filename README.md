@@ -151,3 +151,8 @@ Copy code
    git add README.md
    git commit -m "Improve README for hackathon & local setup"
    git push origin main
+
+   ## Note for Evaluators
+This project uses Snowflake as a managed cloud database.
+To run locally, a Snowflake account is required.
+The Streamlit UI and SQL logic are fully included in this repository.
