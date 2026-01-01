@@ -28,7 +28,7 @@ Overview of stock health, critical alerts, and usage metrics across hospitals.
 
 ### 🏬 Distribution Dashboard
 Centralized view for distribution centers to monitor and manage supplies.
-![Distribution Dashboard](assets/Distribution Dashboard.png)
+![Distribution Dashboard](assets/distribution_dashboard.png)
 
 ### 📦 Inventory Management
 Real-time inventory visibility for each hospital and NGO.
