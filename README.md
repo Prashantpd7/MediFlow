@@ -20,5 +20,12 @@ Snowflake and Streamlit.
 1. Execute `MediFlow_Setup.sql` in Snowflake
 2. Run Streamlit app inside Snowflake Projects
 
+## Run Locally
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/Prashantpd7/MediFlow.git
+cd MediFlow
+
 ## Author
 Prashant Dwivedi
