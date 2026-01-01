@@ -20,6 +20,24 @@ Healthcare institutions often face:
 **MediFlow solves this by providing real-time visibility and intelligence.**
 
 ---
+## 📸 Application Screenshots
+
+### 🏥 System Dashboard
+Overview of stock health, critical alerts, and usage metrics across hospitals.
+![System Dashboard](assets/system_dashboard.png)
+
+### 🏬 Distribution Dashboard
+Centralized view for distribution centers to monitor and manage supplies.
+![Distribution Dashboard](assets/Distribution Dashboard.png)
+
+### 📦 Inventory Management
+Real-time inventory visibility for each hospital and NGO.
+![Inventory](assets/inventory.png)
+
+### 📩 Hospital Requests
+Request and approval workflow between hospitals and distribution centers.
+![Hospital Requests](assets/hospital_requests.png)
+
 
 ## ✨ Key Features
 - Hospital & NGO inventory tracking
