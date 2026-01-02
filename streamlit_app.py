@@ -28,55 +28,12 @@ import importlib.util
 
 
 def get_active_session():
-    # Streamlit Cloud fix: recreate DB every time if missing
-    if not os.path.exists(DB_PATH):
-        init_db(DB_PATH)
-        seed_db(DB_PATH)
-
-    conn = sqlite3.connect(DB_PATH)
-    return SQLiteSession(conn)
-
-    # Lazy import of init_db to ensure ROOT_DIR and sys.path are set up first
-    
-    # Import `init_db` from the local file. On some hosting environments
-    # (Streamlit Community Cloud) the normal import may fail due to import
-    # path / package semantics; if so, fall back to loading the module
-    # directly from the repository file path.
-    try:
-        from init_db import init_db as init_db_func, DB_PATH as db_path
-        init_db = init_db_func
-        DB_PATH = db_path
-        print(f"[DEBUG] Successfully imported init_db using standard import")
-    except Exception as e:
-        print(f"[DEBUG] Standard import failed: {type(e).__name__}: {e}")
-        print(f"[DEBUG] ROOT_DIR = {ROOT_DIR}")
-        print(f"[DEBUG] sys.path = {sys.path}")
-        init_db_path = Path(ROOT_DIR) / "init_db.py"
-        print(f"[DEBUG] Attempting fallback import from: {init_db_path}")
-        print(f"[DEBUG] File exists? {init_db_path.exists()}")
-        try:
-            spec = importlib.util.spec_from_file_location("init_db", str(init_db_path))
-            print(f"[DEBUG] spec = {spec}")
-            init_db_mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(init_db_mod)
-            init_db = getattr(init_db_mod, "init_db")
-            DB_PATH = getattr(init_db_mod, "DB_PATH", str(Path(ROOT_DIR) / "mediflow.db"))
-            print(f"[DEBUG] Fallback import successful. DB_PATH = {DB_PATH}")
-        except Exception as e2:
-            print(f"[DEBUG] Fallback import also failed: {type(e2).__name__}: {e2}")
-            raise
-    
-    # Initialize database tables and auto-seed if needed
-    init_db(DB_PATH)
-
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-
+    # Lightweight result wrapper used by the rest of the app
     class Result:
         def __init__(self, df=None):
             self._df = df if df is not None else pd.DataFrame()
 
         def to_pandas(self):
-            # normalize columns to upper-case to match app expectations
             df = self._df.copy()
             df.columns = [c.upper() for c in df.columns]
             return df
@@ -90,14 +47,12 @@ def get_active_session():
             self._create_views()
 
         def _create_views(self):
-            """Create computed views based on inventory data."""
+            """Create computed views based on inventory data (SQLite-compatible)."""
             try:
                 cur = self.conn.cursor()
-                # Drop existing views if they exist
                 cur.execute('DROP VIEW IF EXISTS inventory_status')
                 cur.execute('DROP VIEW IF EXISTS reorder_recommendations')
-                
-                # Create inventory_status view
+
                 cur.execute('''
                     CREATE VIEW inventory_status AS
                     SELECT
@@ -114,8 +69,8 @@ def get_active_session():
                         END AS stock_status
                     FROM inventory
                 ''')
-                
-                # Create reorder_recommendations view
+
+                # Use SQLite-compatible CASE expression instead of GREATEST()
                 cur.execute('''
                     CREATE VIEW reorder_recommendations AS
                     SELECT
@@ -125,7 +80,10 @@ def get_active_session():
                         daily_usage,
                         lead_time_days,
                         CAST(stock_available / CASE WHEN daily_usage = 0 THEN 1 ELSE daily_usage END AS INTEGER) AS days_left,
-                        GREATEST((daily_usage * lead_time_days) - stock_available, 0) AS recommended_reorder_qty,
+                        CASE WHEN (daily_usage * lead_time_days) - stock_available > 0
+                            THEN (daily_usage * lead_time_days) - stock_available
+                            ELSE 0
+                        END AS recommended_reorder_qty,
                         CASE
                             WHEN CAST(stock_available / CASE WHEN daily_usage = 0 THEN 1 ELSE daily_usage END AS INTEGER) <= lead_time_days THEN 'HIGH'
                             WHEN CAST(stock_available / CASE WHEN daily_usage = 0 THEN 1 ELSE daily_usage END AS INTEGER) <= lead_time_days + 3 THEN 'MEDIUM'
@@ -133,13 +91,13 @@ def get_active_session():
                         END AS priority
                     FROM inventory
                 ''')
+
                 self.conn.commit()
             except Exception as e:
                 print(f"Error creating views: {e}")
 
         def sql(self, query):
             q = query
-            # adapt Snowflake ::INT cast to SQLite CAST(... AS INTEGER)
             q = q.replace('::INT', '')
             q = q.replace('AVG(days_left)::INT', 'CAST(AVG(days_left) AS INTEGER)')
 
@@ -153,9 +111,20 @@ def get_active_session():
                     self.conn.commit()
                     return Result(pd.DataFrame())
             except Exception:
-                # On error, return empty result to avoid crashing the UI
                 return Result(pd.DataFrame())
 
+    # Ensure DB exists and is seeded exactly once per cold start (ephemeral FS)
+    db_path = DB_PATH
+    try:
+        exists = Path(str(db_path)).exists()
+    except Exception:
+        exists = os.path.exists(str(db_path))
+
+    if not exists:
+        init_db(db_path)
+        seed_db(db_path)
+
+    conn = sqlite3.connect(str(db_path), check_same_thread=False)
     return SQLiteSession(conn)
 
 # PAGE CONFIG

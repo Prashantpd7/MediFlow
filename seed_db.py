@@ -3,9 +3,13 @@ from pathlib import Path
 
 DB_PATH = Path(__file__).parent / "mediflow.db"
 
-def seed_database():
-    """Add sample data to the database using INSERT OR IGNORE to avoid duplicates."""
-    conn = sqlite3.connect(str(DB_PATH))
+def seed_db(db_path):
+    """Add sample data to the specified SQLite database.
+
+    This function accepts a path (Path or str) so callers can seed a
+    database at any location (useful for Streamlit Cloud ephemeral FS).
+    """
+    conn = sqlite3.connect(str(db_path))
     cursor = conn.cursor()
 
     # Add hospitals data (INSERT OR IGNORE prevents duplicates on reruns)
@@ -60,6 +64,9 @@ def seed_database():
     conn.close()
     print("[SEED] Database seeded with demo data successfully!")
 
-if __name__ == "__main__":
-    seed_database()
+# Backwards-compatible alias used by older code
+def seed_database(db_path=DB_PATH):
+    return seed_db(db_path)
 
+if __name__ == "__main__":
+    seed_db(DB_PATH)
