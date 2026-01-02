@@ -11,7 +11,7 @@ from init_db import init_db, DB_PATH
 def get_active_session():
     # Ensure DB exists
     init_db(DB_PATH)
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 
     class Result:
         def __init__(self, df=None):
