@@ -59,6 +59,26 @@ def get_active_session():
     
     # Ensure DB exists
     init_db(DB_PATH)
+    
+    # Auto-seed database if it's empty
+    try:
+        seed_db_path = Path(ROOT_DIR) / "seed_db.py"
+        spec_seed = importlib.util.spec_from_file_location("seed_db", str(seed_db_path))
+        seed_db_mod = importlib.util.module_from_spec(spec_seed)
+        spec_seed.loader.exec_module(seed_db_mod)
+        
+        # Check if hospitals table is empty
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM hospitals")
+        count = cursor.fetchone()[0]
+        conn.close()
+        
+        if count == 0:
+            print("[DEBUG] Hospitals table empty. Running seed_database()...")
+            seed_db_mod.seed_database()
+    except Exception as seed_error:
+        print(f"[DEBUG] Auto-seed warning: {seed_error}")
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 
     class Result:
