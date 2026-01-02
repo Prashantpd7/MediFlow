@@ -5,3 +5,4 @@ plotly
 snowflake-snowpark-python
 snowflake-connector-python
 python-dotenv
+# Updated 2026-01-02 - lazy import fix

@@ -22,36 +22,41 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 from pathlib import Path
-
-# Import `init_db` from the local file. On some hosting environments
-# (Streamlit Community Cloud) the normal import may fail due to import
-# path / package semantics; if so, fall back to loading the module
-# directly from the repository file path.
-try:
-    from init_db import init_db, DB_PATH
-    print(f"[DEBUG] Successfully imported init_db using standard import")
-except Exception as e:
-    print(f"[DEBUG] Standard import failed: {type(e).__name__}: {e}")
-    print(f"[DEBUG] ROOT_DIR = {ROOT_DIR}")
-    print(f"[DEBUG] sys.path = {sys.path}")
-    import importlib.util
-    init_db_path = Path(ROOT_DIR) / "init_db.py"
-    print(f"[DEBUG] Attempting fallback import from: {init_db_path}")
-    print(f"[DEBUG] File exists? {init_db_path.exists()}")
-    try:
-        spec = importlib.util.spec_from_file_location("init_db", str(init_db_path))
-        print(f"[DEBUG] spec = {spec}")
-        init_db_mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(init_db_mod)
-        init_db = getattr(init_db_mod, "init_db")
-        DB_PATH = getattr(init_db_mod, "DB_PATH", str(Path(ROOT_DIR) / "mediflow.db"))
-        print(f"[DEBUG] Fallback import successful. DB_PATH = {DB_PATH}")
-    except Exception as e2:
-        print(f"[DEBUG] Fallback import also failed: {type(e2).__name__}: {e2}")
-        raise
+import importlib.util
 
 
 def get_active_session():
+    # Lazy import of init_db to ensure ROOT_DIR and sys.path are set up first
+    global init_db, DB_PATH
+    
+    # Import `init_db` from the local file. On some hosting environments
+    # (Streamlit Community Cloud) the normal import may fail due to import
+    # path / package semantics; if so, fall back to loading the module
+    # directly from the repository file path.
+    try:
+        from init_db import init_db as init_db_func, DB_PATH as db_path
+        init_db = init_db_func
+        DB_PATH = db_path
+        print(f"[DEBUG] Successfully imported init_db using standard import")
+    except Exception as e:
+        print(f"[DEBUG] Standard import failed: {type(e).__name__}: {e}")
+        print(f"[DEBUG] ROOT_DIR = {ROOT_DIR}")
+        print(f"[DEBUG] sys.path = {sys.path}")
+        init_db_path = Path(ROOT_DIR) / "init_db.py"
+        print(f"[DEBUG] Attempting fallback import from: {init_db_path}")
+        print(f"[DEBUG] File exists? {init_db_path.exists()}")
+        try:
+            spec = importlib.util.spec_from_file_location("init_db", str(init_db_path))
+            print(f"[DEBUG] spec = {spec}")
+            init_db_mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(init_db_mod)
+            init_db = getattr(init_db_mod, "init_db")
+            DB_PATH = getattr(init_db_mod, "DB_PATH", str(Path(ROOT_DIR) / "mediflow.db"))
+            print(f"[DEBUG] Fallback import successful. DB_PATH = {DB_PATH}")
+        except Exception as e2:
+            print(f"[DEBUG] Fallback import also failed: {type(e2).__name__}: {e2}")
+            raise
+    
     # Ensure DB exists
     init_db(DB_PATH)
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
