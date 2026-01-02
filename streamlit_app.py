@@ -1,8 +1,11 @@
+import sys
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent
+sys.path.append(str(ROOT_DIR))
+
 import streamlit as st
 import pandas as pd
-# from snowflake.snowpark.context import get_active_session
-
-# Use a local SQLite DB initialized from `init_db.py`
 import sqlite3
 from pathlib import Path
 from init_db import init_db, DB_PATH
