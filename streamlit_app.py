@@ -57,72 +57,9 @@ def get_active_session():
             print(f"[DEBUG] Fallback import also failed: {type(e2).__name__}: {e2}")
             raise
     
-    # Ensure DB exists
+    # Initialize database tables and auto-seed if needed
     init_db(DB_PATH)
-    
-    # Auto-seed database if it's empty (inline to avoid import issues)
-    conn_seed = sqlite3.connect(DB_PATH, check_same_thread=False)
-    cursor_seed = conn_seed.cursor()
-    try:
-        cursor_seed.execute("SELECT COUNT(*) FROM hospitals")
-        count = cursor_seed.fetchone()[0]
-        
-        if count == 0:
-            print("[DEBUG] Hospitals table empty. Seeding with sample data...")
-            
-            # Seed hospitals
-            hospitals = [
-                ('H1', 'City Hospital', 'Delhi'),
-                ('H2', 'Green Life Hospital', 'Noida'),
-                ('H3', 'Care Plus Hospital', 'Ghaziabad'),
-                ('N1', 'Health NGO Trust', 'Delhi'),
-                ('N2', 'Helping Hands NGO', 'Noida'),
-            ]
-            cursor_seed.executemany('''
-                INSERT INTO hospitals (hospital_id, hospital_name, location)
-                VALUES (?, ?, ?)
-            ''', hospitals)
-            
-            # Seed inventory
-            inventory_data = [
-                ('H1', 'Paracetamol', 120, 30, 3),
-                ('H1', 'Insulin', 50, 10, 7),
-                ('H1', 'Amoxicillin', 80, 20, 3),
-                ('H1', 'ORS Sachet', 100, 25, 3),
-                ('H1', 'Cough Syrup', 60, 15, 3),
-                ('H2', 'Paracetamol', 60, 20, 3),
-                ('H2', 'Oxygen Cylinder', 15, 5, 5),
-                ('H2', 'Insulin', 40, 8, 7),
-                ('H2', 'IV Fluids', 70, 14, 3),
-                ('H2', 'ORS Sachet', 90, 18, 3),
-                ('H3', 'Paracetamol', 200, 25, 3),
-                ('H3', 'Antibiotic Injection', 30, 6, 3),
-                ('H3', 'Insulin', 45, 9, 7),
-                ('H3', 'IV Fluids', 60, 12, 3),
-                ('H3', 'Cough Syrup', 55, 11, 3),
-                ('N1', 'Paracetamol', 40, 15, 3),
-                ('N1', 'ORS Sachet', 120, 30, 3),
-                ('N1', 'Amoxicillin', 50, 10, 3),
-                ('N1', 'IV Fluids', 40, 8, 3),
-                ('N1', 'Cough Syrup', 35, 7, 3),
-                ('N2', 'Insulin', 20, 8, 7),
-                ('N2', 'ORS Sachet', 60, 20, 3),
-                ('N2', 'Oxygen Cylinder', 10, 3, 5),
-                ('N2', 'Amoxicillin', 30, 6, 3),
-                ('N2', 'Paracetamol', 50, 12, 3),
-            ]
-            cursor_seed.executemany('''
-                INSERT INTO inventory (hospital_id, medicine_name, stock_available, daily_usage, lead_time_days)
-                VALUES (?, ?, ?, ?, ?)
-            ''', inventory_data)
-            
-            conn_seed.commit()
-            print("[DEBUG] Database seeded successfully!")
-    except Exception as e:
-        print(f"[DEBUG] Seed error: {e}")
-    finally:
-        conn_seed.close()
-    
+
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 
     class Result:

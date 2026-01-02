@@ -11,11 +11,7 @@ def seed_database():
     cursor.execute('DELETE FROM billing')
     cursor.execute('DELETE FROM inventory')
     cursor.execute('DELETE FROM hospitals')
-
-    # Add hospitals data from MediFlow_Setup.sql
-    hospitals = [
-        ('H1', 'City Hospital', 'Delhi'),
-        ('H2', 'Green Life Hospital', 'Noida'),
+        # Add hospitals data (INSERT OR IGNORE prevents duplicates on reruns)
         ('H3', 'Care Plus Hospital', 'Ghaziabad'),
         ('N1', 'Health NGO Trust', 'Delhi'),
         ('N2', 'Helping Hands NGO', 'Noida'),
@@ -25,10 +21,10 @@ def seed_database():
         INSERT INTO hospitals (hospital_id, hospital_name, location)
         VALUES (?, ?, ?)
     ''', hospitals)
-
-    # Add inventory data from MediFlow_Setup.sql
-    inventory_data = [
-        # H1
+        cursor.executemany('''
+            INSERT OR IGNORE INTO hospitals (hospital_id, hospital_name, location)
+            VALUES (?, ?, ?)
+        ''', hospitals)
         ('H1', 'Paracetamol', 120, 30, 3),
         ('H1', 'Insulin', 50, 10, 7),
         ('H1', 'Amoxicillin', 80, 20, 3),
@@ -71,3 +67,5 @@ def seed_database():
 
 if __name__ == "__main__":
     seed_database()
+        print("[SEED] Database seeded with demo data successfully!")
+

@@ -5,7 +5,7 @@ from pathlib import Path
 DB_PATH = Path(__file__).parent / "mediflow.db"
 
 def init_db(db_path):
-    """Initialize the SQLite database with required tables matching MediFlow_Setup.sql schema."""
+    """Initialize the SQLite database with required tables and seed demo data."""
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -57,6 +57,13 @@ def init_db(db_path):
 
     conn.commit()
     conn.close()
+
+    # Auto-seed database with demo data if not already populated
+    try:
+        from seed_db import seed_database
+        seed_database()
+    except Exception as e:
+        print(f"[INIT] Warning: Could not auto-seed database: {e}")
 
 if __name__ == "__main__":
     init_db(DB_PATH)
