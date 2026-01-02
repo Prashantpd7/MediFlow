@@ -22,7 +22,21 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 from pathlib import Path
-from init_db import init_db, DB_PATH
+
+# Import `init_db` from the local file. On some hosting environments
+# (Streamlit Community Cloud) the normal import may fail due to import
+# path / package semantics; if so, fall back to loading the module
+# directly from the repository file path.
+try:
+    from init_db import init_db, DB_PATH
+except Exception:
+    import importlib.util
+    init_db_path = Path(ROOT_DIR) / "init_db.py"
+    spec = importlib.util.spec_from_file_location("init_db", str(init_db_path))
+    init_db_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(init_db_mod)
+    init_db = getattr(init_db_mod, "init_db")
+    DB_PATH = getattr(init_db_mod, "DB_PATH", str(Path(ROOT_DIR) / "mediflow.db"))
 
 
 def get_active_session():
