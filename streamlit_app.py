@@ -1,8 +1,22 @@
 import sys
+import os
 from pathlib import Path
 
-ROOT_DIR = Path(__file__).resolve().parent
-sys.path.append(str(ROOT_DIR))
+# Ensure the repository/app directory and current working directory are on sys.path
+# so local modules like `init_db.py` can be imported on Streamlit Community Cloud.
+try:
+    ROOT_DIR = Path(__file__).resolve().parent
+except NameError:
+    # When __file__ is not available, fall back to the current working directory
+    ROOT_DIR = Path(os.getcwd()).resolve()
+
+# Insert at the front so these paths take precedence over other entries
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+cwd = Path.cwd().resolve()
+if str(cwd) not in sys.path:
+    sys.path.insert(0, str(cwd))
 
 import streamlit as st
 import pandas as pd
