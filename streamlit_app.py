@@ -1,3 +1,5 @@
+from init_db import init_db, DB_PATH
+from seed_db import seed_db
 import sys
 import os
 from pathlib import Path
@@ -26,6 +28,14 @@ import importlib.util
 
 
 def get_active_session():
+    # Streamlit Cloud fix: recreate DB every time if missing
+    if not os.path.exists(DB_PATH):
+        init_db(DB_PATH)
+        seed_db(DB_PATH)
+
+    conn = sqlite3.connect(DB_PATH)
+    return SQLiteSession(conn)
+
     # Lazy import of init_db to ensure ROOT_DIR and sys.path are set up first
     global init_db, DB_PATH
     
@@ -227,6 +237,40 @@ with st.sidebar:
 
 # SNOWFLAKE SESSION
 session = get_active_session()
+
+# --- DEBUG: database status shown in sidebar (helps verify seeding on Cloud) ---
+try:
+    import time
+    db_path_str = str(DB_PATH)
+    db_exists = Path(db_path_str).exists()
+    conn_dbg = sqlite3.connect(DB_PATH, check_same_thread=False)
+    cur_dbg = conn_dbg.cursor()
+    def safe_count(table):
+        try:
+            cur_dbg.execute(f"SELECT COUNT(*) FROM {table}")
+            return cur_dbg.fetchone()[0]
+        except Exception:
+            return None
+
+    hospitals_count = safe_count('hospitals')
+    inventory_count = safe_count('inventory')
+    cur_dbg.close()
+    conn_dbg.close()
+
+    with st.sidebar.expander('DB status (debug)'):
+        st.write('DB path:', db_path_str)
+        st.write('Exists:', db_exists)
+        st.write('Hospitals:', hospitals_count)
+        st.write('Inventory rows:', inventory_count)
+        st.write('Timestamp:', time.strftime('%Y-%m-%d %H:%M:%S'))
+except Exception as _dbg_e:
+    # Keep the app running even if debug check fails
+    try:
+        with st.sidebar.expander('DB status (debug)'):
+            st.write('DB debug failed:', str(_dbg_e))
+    except Exception:
+        pass
+# --- end debug ---
 
 # DASHBOARD
 if st.session_state.page == "Dashboard":
