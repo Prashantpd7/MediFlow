@@ -29,14 +29,26 @@ from pathlib import Path
 # directly from the repository file path.
 try:
     from init_db import init_db, DB_PATH
-except Exception:
+    print(f"[DEBUG] Successfully imported init_db using standard import")
+except Exception as e:
+    print(f"[DEBUG] Standard import failed: {type(e).__name__}: {e}")
+    print(f"[DEBUG] ROOT_DIR = {ROOT_DIR}")
+    print(f"[DEBUG] sys.path = {sys.path}")
     import importlib.util
     init_db_path = Path(ROOT_DIR) / "init_db.py"
-    spec = importlib.util.spec_from_file_location("init_db", str(init_db_path))
-    init_db_mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(init_db_mod)
-    init_db = getattr(init_db_mod, "init_db")
-    DB_PATH = getattr(init_db_mod, "DB_PATH", str(Path(ROOT_DIR) / "mediflow.db"))
+    print(f"[DEBUG] Attempting fallback import from: {init_db_path}")
+    print(f"[DEBUG] File exists? {init_db_path.exists()}")
+    try:
+        spec = importlib.util.spec_from_file_location("init_db", str(init_db_path))
+        print(f"[DEBUG] spec = {spec}")
+        init_db_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(init_db_mod)
+        init_db = getattr(init_db_mod, "init_db")
+        DB_PATH = getattr(init_db_mod, "DB_PATH", str(Path(ROOT_DIR) / "mediflow.db"))
+        print(f"[DEBUG] Fallback import successful. DB_PATH = {DB_PATH}")
+    except Exception as e2:
+        print(f"[DEBUG] Fallback import also failed: {type(e2).__name__}: {e2}")
+        raise
 
 
 def get_active_session():
