@@ -37,7 +37,6 @@ def get_active_session():
     return SQLiteSession(conn)
 
     # Lazy import of init_db to ensure ROOT_DIR and sys.path are set up first
-    global init_db, DB_PATH
     
     # Import `init_db` from the local file. On some hosting environments
     # (Streamlit Community Cloud) the normal import may fail due to import
