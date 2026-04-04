@@ -75,10 +75,7 @@ MediFlow/
 ├── requirements.txt # Python dependencies
 └── README.md # Project documentation
 
-yaml
-Copy code
-
----
+## YouTube video link: https://youtu.be/Q3HrB-7ZZwI
 
 ## ▶️ How to Run (Snowflake – Recommended)
 
